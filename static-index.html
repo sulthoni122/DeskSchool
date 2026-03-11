@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GuruDesk - Kelas Digital</title>
+    <link rel="stylesheet" href="frontend/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.1/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        body { display: block; }
+    </style>
+</head>
+<body>
+    <div class="app-container" id="app">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">
+                    <div class="logo-icon"><i class="fas fa-graduation-cap"></i></div>
+                    <span class="logo-text">GuruDesk</span>
+                </div>
+            </div>
+            <nav class="sidebar-nav">
+                <div class="nav-section">
+                    <div class="nav-section-title">Menu Utama</div>
+                    <a href="#" class="nav-item active" data-page="dashboard">
+                        <i class="fas fa-th-large"></i><span>Dashboard</span>
+                    </a>
+                    <a href="#" class="nav-item" data-page="siswa">
+                        <i class="fas fa-users"></i><span>Siswa</span>
+                    </a>
+                    <a href="#" class="nav-item" data-page="absensi">
+                        <i class="fas fa-clipboard-check"></i><span>Absensi</span>
+                    </a>
+                    <a href="#" class="nav-item" data-page="nilai">
+                        <i class="fas fa-chart-line"></i><span>Nilai</span>
+                    </a>
+                    <a href="#" class="nav-item" data-page="laporan">
+                        <i class="fas fa-file-alt"></i><span>Laporan</span>
+                    </a>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="topbar">
+                <div class="topbar-left">
+                    <button class="mobile-menu-btn" onclick="toggleSidebar()">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <h1 class="topbar-title" id="pageTitle">Dashboard</h1>
+                </div>
+                <div class="topbar-right">
+                    <button class="topbar-btn" onclick="clearData()" title="Hapus Semua Data">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                    <div class="user-profile">
+                        <div class="user-avatar">G</div>
+                        <span class="user-name">Guru</span>
+                    </div>
+                </div>
+            </header>
+
+            <div class="page-content" id="pageContent">
+                <!-- Content loaded via JavaScript -->
+            </div>
+        </main>
+    </div>
+
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script>
+        // ==================== DATA STORAGE ====================
+        const STORAGE_KEY = 'guruDeskData';
+
+        function loadData() {
+            const data = localStorage.getItem(STORAGE_KEY);
+            if (data) return JSON.parse(data);
+            return { students: [], attendance: [], grades: [] };
+        }
+
+        function saveData(data) {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        }
+
+        // ==================== UTILITY ====================
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            const icons = { success: 'fa-check-circle', error: 'fa-times-circle', warning: 'fa-exclamation-circle', info: 'fa-info-circle' };
+            toast.innerHTML = `<i class="fas ${icons[type] || icons.info}"></i> <span>${message}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+
+        function formatDate(dateStr) {
+            const d = new Date(dateStr);
+            return d.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
+        }
+
+        function generateId() {
+            return Date.now() + Math.random().toString(36).substr(2, 9);
+        }
+
+        // ==================== NAVIGATION ====================
+        let currentPage = 'dashboard';
+
+        function navigateTo(page) {
+            currentPage = page;
+            document.querySelectorAll('.nav-item').forEach(el => {
+                el.classList.toggle('active', el.dataset.page === page);
+            });
+            const titles = { dashboard: 'Dashboard', siswa: 'Data Siswa', absensi: 'Absensi', nilai: 'Nilai', laporan: 'Laporan' };
+            document.getElementById('pageTitle').textContent = titles[page] || page;
+            renderPage(page);
+        }
+
+        document.querySelectorAll('.nav-item').forEach(el => {
+            el.addEventListener('click', (e) => {
+                e.preventDefault();
+                navigateTo(el.dataset.page);
+            });
+        });
+
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('active');
+        }
+
+        // ==================== PAGE RENDERERS ====================
+        function renderPage(page) {
+            const content = document.getElementById('pageContent');
+            switch(page) {
+                case 'dashboard': renderDashboard(content); break;
+                case 'siswa': renderSiswa(content); break;
+                case 'absensi': renderAbsensi(content); break;
+                case 'nilai': renderNilai(content); break;
+                case 'laporan': renderLaporan(content); break;
+            }
+        }
+
+        // ==================== DASHBOARD ====================
+        let dashboardChart = null;
+
+        function renderDashboard(container) {
+            const data = loadData();
+            const totalStudents = data.students.length;
+            const totalClasses = [...new Set(data.students.map(s => s.class))].filter(Boolean).length;
+            const allGrades = data.grades.map(g => g.score);
+            const classAverage = allGrades.length ? (allGrades.reduce((a, b) => a + b, 0) / allGrades.length).toFixed(2) : 0;
+
+            // Calculate remedial
+            const studentAvg = {};
+            data.grades.filter(g => g.type === 'uts' || g.type === 'uas').forEach(g => {
+                if (!studentAvg[g.student_id]) studentAvg[g.student_id] = [];
+                studentAvg[g.student_id].push(g.score);
+            });
+            const remedialCount = Object.values(studentAvg).filter(scores => scores.length && scores.reduce((a, b) => a + b, 0) / scores.length < 70).length;
+
+            // Calculate attendance stats
+            const meetingStats = {};
+            data.attendance.forEach(a => {
+                if (!meetingStats[a.meeting]) meetingStats[a.meeting] = { hadir: 0, sakit: 0, izin: 0, alpha: 0 };
+                if (a.status === 'H') meetingStats[a.meeting].hadir++;
+                else if (a.status === 'S') meetingStats[a.meeting].sakit++;
+                else if (a.status === 'I') meetingStats[a.meeting].izin++;
+                else if (a.status === 'A') meetingStats[a.meeting].alpha++;
+            });
+
+            container.innerHTML = `
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon blue"><i class="fas fa-users"></i></div>
+                        <div class="stat-info"><h3>${totalStudents}</h3><p>Total Siswa</p></div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon green"><i class="fas fa-school"></i></div>
+                        <div class="stat-info"><h3>${totalClasses}</h3><p>Total Kelas</p></div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon orange"><i class="fas fa-star"></i></div>
+                        <div class="stat-info"><h3>${classAverage}</h3><p>Rata-rata Nilai</p></div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon red"><i class="fas fa-exclamation-triangle"></i></div>
+                        <div class="stat-info"><h3>${remedialCount}</h3><p>Perlu Remidi</p></div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header"><h3 class="card-title">Statistik Absensi</h3></div>
+                    <div class="chart-container"><canvas id="attendanceChart"></canvas></div>
+                </div>
+            `;
+
+            setTimeout(() => {
+                const ctx = document.getElementById('attendanceChart');
+                if (ctx && Object.keys(meetingStats).length) {
+                    if (dashboardChart) dashboardChart.destroy();
+                    const meetings = Object.keys(meetingStats).sort((a, b) => a - b);
+                    dashboardChart = new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: meetings.map(m => `Pertemuan ${m}`),
+                            datasets: [
+                                { label: 'Hadir', data: meetings.map(m => meetingStats[m].hadir), backgroundColor: '#27AE60' },
+                                { label: 'Sakit', data: meetings.map(m => meetingStats[m].sakit), backgroundColor: '#F39C12' },
+                                { label: 'Izin', data: meetings.map(m => meetingStats[m].izin), backgroundColor: '#3498DB' },
+                                { label: 'Alpha', data: meetings.map(m => meetingStats[m].alpha), backgroundColor: '#E74C3C' }
+                            ]
+                        },
+                        options: { responsive: true, maintainAspectRatio: false, scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } }, plugins: { legend: { position: 'bottom' } } }
+                    });
+                }
+            }, 100);
+        }
+
+        // ==================== SISWA PAGE ====================
+        function renderSiswa(container) {
+            const data = loadData();
+            container.innerHTML = `
+                <div class="page-header">
+                    <h1 class="page-title">Kelola Data Siswa</h1>
+                    <button class="btn btn-primary" onclick="openSiswaModal()">
+                        <i class="fas fa-plus"></i> Tambah Siswa
+                    </button>
+                </div>
+                <div class="card mb-3">
+                    <div class="search-box" style="max-width: 400px;">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="searchSiswa" placeholder="Cari siswa..." oninput="renderSiswaList()">
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr><th>No</th><th>Nama</th><th>NIS</th><th>Kelas</th><th>Jenis Kelamin</th><th>No. HP</th><th>Aksi</th></tr>
+                        </thead>
+                        <tbody id="siswaTableBody"></tbody>
+                    </table>
+                </div>
+                <div id="siswaEmpty" class="empty-state hidden">
+                    <i class="fas fa-users"></i>
+                    <h3>Belum Ada Siswa</h3>
+                    <button class="btn btn-primary" onclick="openSiswaModal()"><i class="fas fa-plus"></i> Tambah Siswa</button>
+                </div>
+            `;
+            renderSiswaList();
+        }
+
+        function renderSiswaList() {
+            const data = loadData();
+            const search = document.getElementById('searchSiswa')?.value?.toLowerCase() || '';
+            const filtered = data.students.filter(s => s.name.toLowerCase().includes(search) || s.nis.toLowerCase().includes(search) || s.class.toLowerCase().includes(search));
+            
+            const tbody = document.getElementById('siswaTableBody');
+            const empty = document.getElementById('siswaEmpty');
+            const table = document.querySelector('.table-container');
+            
+            if (!filtered.length) {
+                table.style.display = 'none';
+                empty.classList.remove('hidden');
+                return;
+            }
+            table.style.display = 'block';
+            empty.classList.add('hidden');
+            
+            tbody.innerHTML = filtered.map((s, i) => `
+                <tr>
+                    <td>${i + 1}</td>
+                    <td><strong>${s.name}</strong></td>
+                    <td>${s.nis}</td>
+                    <td>${s.class}</td>
+                    <td>${s.gender === 'L' ? 'Laki-laki' : 'Perempuan'}</td>
+                    <td>${s.parent_phone || '-'}</td>
+                    <td>
+                        <div class="table-actions">
+                            <button class="btn btn-sm btn-secondary" onclick="editSiswa('${s.id}')"><i class="fas fa-edit"></i></button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteSiswa('${s.id}')"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function openSiswaModal(id = null) {
+            const data = loadData();
+            const student = id ? data.students.find(s => s.id === id) : null;
+            const modal = document.createElement('div');
+            modal.className = 'modal-overlay active';
+            modal.innerHTML = `
+                <div class="modal">
+                    <div class="modal-header">
+                        <h3 class="modal-title">${student ? 'Edit' : 'Tambah'} Siswa</h3>
+                        <button class="modal-close" onclick="this.closest('.modal-overlay').remove()"><i class="fas fa-times"></i></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="siswaForm">
+                            <input type="hidden" id="siswaId" value="${student?.id || ''}">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">Nama Lengkap *</label>
+                                    <input type="text" class="form-control" id="siswaName" required value="${student?.name || ''}">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">NIS *</label>
+                                    <input type="text" class="form-control" id="siswaNis" required value="${student?.nis || ''}">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">Kelas *</label>
+                                    <select class="form-control" id="siswaClass" required>
+                                        <option value="">Pilih Kelas</option>
+                                        ${['X IPA 1','X IPA 2','X IPS 1','X IPS 2','XI IPA 1','XI IPA 2','XI IPS 1','XI IPS 2','XII IPA 1','XII IPA 2','XII IPS 1','XII IPS 2'].map(c => `<option value="${c}" ${student?.class === c ? 'selected' : ''}>${c}</option>`).join('')}
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Jenis Kelamin *</label>
+                                    <select class="form-control" id="siswaGender" required>
+                                        <option value="">Pilih</option>
+                                        <option value="L" ${student?.gender === 'L' ? 'selected' : ''}>Laki-laki</option>
+                                        <option value="P" ${student?.gender === 'P' ? 'selected' : ''}>Perempuan</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">No. HP Orang Tua</label>
+                                <input type="text" class="form-control" id="siswaPhone" value="${student?.parent_phone || ''}">
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary" onclick="this.closest('.modal-overlay').remove()">Batal</button>
+                        <button class="btn btn-primary" onclick="saveSiswa()"><i class="fas fa-save"></i> Simpan</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        }
+
+        function saveSiswa() {
+            const id = document.getElementById('siswaId').value;
+            const name = document.getElementById('siswaName').value.trim();
+            const nis = document.getElementById('siswaNis').value.trim();
+            const studentClass = document.getElementById('siswaClass').value;
+            const gender = document.getElementById('siswaGender').value;
+            const parent_phone = document.getElementById('siswaPhone').value.trim();
+
+            if (!name || !nis || !studentClass || !gender) {
+                showToast('Mohon lengkapi semua field', 'warning');
+                return;
+            }
+
+            const data = loadData();
+            if (!id) {
+                if (data.students.some(s => s.nis === nis)) {
+                    showToast('NIS sudah ada!', 'error');
+                    return;
+                }
+                data.students.push({ id: generateId(), name, nis, class: studentClass, gender, parent_phone, created_at: new Date().toISOString() });
+            } else {
+                const idx = data.students.findIndex(s => s.id === id);
+                if (idx > -1) {
+                    if (nis !== data.students[idx].nis && data.students.some(s => s.nis === nis)) {
+                        showToast('NIS sudah ada!', 'error');
+                        return;
+                    }
+                    data.students[idx] = { ...data.students[idx], name, nis, class: studentClass, gender, parent_phone };
+                }
+            }
+            saveData(data);
+            document.querySelector('.modal-overlay')?.remove();
+            renderSiswaList();
+            showToast('Data disimpan!', 'success');
+        }
+
+        function editSiswa(id) { openSiswaModal(id); }
+
+        function deleteSiswa(id) {
+            if (!confirm('Hapus siswa ini?')) return;
+            let data = loadData();
+            data.students = data.students.filter(s => s.id !== id);
+            data.attendance = data.attendance.filter(a => a.student_id !== id);
+            data.grades = data.grades.filter(g => g.student_id !== id);
+            saveData(data);
+            renderSiswaList();
+            showToast('Siswa dihapus!', 'success');
+        }
+
+        // ==================== ABSENSI PAGE ====================
+        let currentMeeting = 1;
+
+        function renderAbsensi(container) {
+            const data = loadData();
+            container.innerHTML = `
+                <div class="page-header"><h1 class="page-title">Kelola Absensi</h1></div>
+                <div class="card mb-3">
+                    <div style="display: flex; gap: 16px; flex-wrap: wrap; align-items: flex-end;">
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label class="form-label">Pertemuan Ke-</label>
+                            <select class="form-control" id="meetingSelect" style="width: 150px;" onchange="currentMeeting=this.value;renderAbsensiList()">
+                                ${Array.from({length:15},(_,i)=>`<option value="${i+1}" ${i+1===currentMeeting?'selected':''}>${i+1}</option>`).join('')}
+                            </select>
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label class="form-label">Tanggal</label>
+                            <input type="date" class="form-control" id="absenDate" style="width: 180px;" value="${new Date().toISOString().split('T')[0]}">
+                        </div>
+                        <button class="btn btn-success" onclick="saveAbsensi()"><i class="fas fa-save"></i> Simpan</button>
+                    </div>
+                </div>
+                <div class="tabs mb-3">
+                    <button class="tab active" onclick="switchAbsenTab('input')"><i class="fas fa-pen"></i> Input</button>
+                    <button class="tab" onclick="switchAbsenTab('history')"><i class="fas fa-history"></i> Riwayat</button>
+                </div>
+                <div id="absenInput" class="tab-content active">
+                    <div id="absensiList" class="attendance-grid"></div>
+                </div>
+                <div id="absenHistory" class="tab-content">
+                    <div class="card">
+                        <div class="table-container" style="box-shadow: none;">
+                            <table><thead><tr><th>Pertemuan</th><th>Tanggal</th><th>Nama</th><th>Kelas</th><th>Status</th></tr></thead>
+                            <tbody id="historyTableBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `;
+            renderAbsensiList();
+        }
+
+        function switchAbsenTab(tab) {
+            document.querySelectorAll('#absensi .tab').forEach(t => t.classList.remove('active'));
+            if (tab === 'input') {
+                document.querySelectorAll('#absensi .tab')[0]?.classList.add('active');
+                document.getElementById('absenInput').classList.add('active');
+                document.getElementById('absenHistory').classList.remove('active');
+            } else {
+                document.querySelectorAll('#absensi .tab')[1]?.classList.add('active');
+                document.getElementById('absenInput').classList.remove('active');
+                document.getElementById('absenHistory').classList.add('active');
+                renderAbsenHistory();
+            }
+        }
+
+        function renderAbsensiList() {
+            const data = loadData();
+            currentMeeting = document.getElementById('meetingSelect')?.value || 1;
+            const attendance = data.attendance.filter(a => a.meeting == currentMeeting);
+            
+            const list = document.getElementById('absensiList');
+            if (!data.students.length) {
+                list.innerHTML = '<div class="empty-state"><i class="fas fa-users"></i><h3>Belum Ada Siswa</h3><p>Tambahkan siswa terlebih dahulu</p></div>';
+                return;
+            }
+            
+            list.innerHTML = data.students.map(s => {
+                const rec = attendance.find(a => a.student_id === s.id);
+                const status = rec?.status || '';
+                return `
+                    <div class="student-attendance-card">
+                        <div class="student-info">
+                            <div class="student-avatar-sm">${s.name.charAt(0)}</div>
+                            <div class="student-details"><h4>${s.name}</h4><p>${s.nis} - ${s.class}</p></div>
+                        </div>
+                        <div class="attendance-buttons">
+                            <button class="att-btn ${status==='H'?'active hadir':''}" onclick="setAbsen('${s.id}','H')">H</button>
+                            <button class="att-btn ${status==='S'?'active sakit':''}" onclick="setAbsen('${s.id}','S')">S</button>
+                            <button class="att-btn ${status==='I'?'active izin':''}" onclick="setAbsen('${s.id}','I')">I</button>
+                            <button class="att-btn ${status==='A'?'active alpha':''}" onclick="setAbsen('${s.id}','A')">A</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        let tempAbsen = {};
+        function setAbsen(id, status) { tempAbsen[id] = status; renderAbsensiList(); }
+
+        function saveAbsensi() {
+            const data = loadData();
+            const meeting = document.getElementById('meetingSelect').value;
+            const date = document.getElementById('absenDate').value;
+            
+            if (!Object.keys(tempAbsen).length) {
+                showToast('Mohon isi absensi', 'warning');
+                return;
+            }
+            
+            data.attendance = data.attendance.filter(a => a.meeting != meeting);
+            Object.entries(tempAbsen).forEach(([sid, status]) => {
+                data.attendance.push({ id: generateId(), student_id: sid, date, meeting: parseInt(meeting), status });
+            });
+            saveData(data);
+            tempAbsen = {};
+            showToast('Absensi disimpan!', 'success');
+            renderAbsensiList();
+        }
+
+        function renderAbsenHistory() {
+            const data = loadData();
+            const tbody = document.getElementById('historyTableBody');
+            const sorted = [...data.attendance].sort((a, b) => b.meeting - a.meeting || a.student_id.localeCompare(b.student_id));
+            
+            if (!sorted.length) {
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center">Belum ada absensi</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = sorted.map(a => {
+                const s = data.students.find(stu => stu.id === a.student_id);
+                const badges = { H: 'badge-hadir', S: 'badge-sakit', I: 'badge-izin', A: 'badge-alpha' };
+                const texts = { H: 'Hadir', S: 'Sakit', I: 'Izin', A: 'Alpha' };
+                return `<tr><td>${a.meeting}</td><td>${formatDate(a.date)}</td><td>${s?.name||'-'}</td><td>${s?.class||'-'}</td><td><span class="badge ${badges[a.status]}">${texts[a.status]}</span></td></tr>`;
+            }).join('');
+        }
+
+        // ==================== NILAI PAGE ====================
+        function renderNilai(container) {
+            const data = loadData();
+            container.innerHTML = `
+                <div class="page-header"><h1 class="page-title">Kelola Nilai</h1></div>
+                <div class="card mb-3">
+                    <div class="form-group">
+                        <label class="form-label">Pilih Siswa</label>
+                        <select class="form-control" id="nilaiSiswaSelect" onchange="renderNilaiForm()">
+                            <option value="">-- Pilih Siswa --</option>
+                            ${data.students.map(s => `<option value="${s.id}">${s.name} - ${s.nis} (${s.class})</option>`).join('')}
+                        </select>
+                    </div>
+                </div>
+                <div id="nilaiForm" class="grade-form hidden">
+                    <div class="grade-inputs">
+                        <div class="grade-input-group">
+                            <label>Tugas (Rata-rata)</label>
+                            <input type="number" id="nilaiTugas" min="0" max="100" oninput="calcNilaiAkhir()">
+                        </div>
+                        <div class="grade-input-group">
+                            <label>Kuis</label>
+                            <input type="number" id="nilaiKuis" min="0" max="100" oninput="calcNilaiAkhir()">
+                        </div>
+                        <div class="grade-input-group">
+                            <label>UTS</label>
+                            <input type="number" id="nilaiUTS" min="0" max="100" oninput="calcNilaiAkhir()">
+                        </div>
+                        <div class="grade-input-group">
+                            <label>UAS</label>
+                            <input type="number" id="nilaiUAS" min="0" max="100" oninput="calcNilaiAkhir()">
+                        </div>
+                        <div class="grade-input-group" style="background: rgba(243,156,18,0.1);">
+                            <label>Remidi</label>
+                            <input type="number" id="nilaiRemidi" min="0" max="100" oninput="calcNilaiAkhir()">
+                        </div>
+                    </div>
+                    <div class="card mt-3" style="background: linear-gradient(135deg, #1E3A5F, #2E5A88); color: white;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;">
+                            <div><div style="font-size:14px;opacity:0.9">Nilai Akhir</div><div style="font-size:36px;font-weight:700" id="nilaiAkhirDisplay">-</div></div>
+                            <div class="text-right"><div style="font-size:14px;opacity:0.9">Rumus:</div><div style="font-size:12px;opacity:0.8">(Tugas×40%)+(UTS×30%)+(UAS×30%)</div></div>
+                        </div>
+                    </div>
+                    <div class="form-actions"><button class="btn btn-primary" onclick="saveNilai()"><i class="fas fa-save"></i> Simpan</button></div>
+                </div>
+                <div id="nilaiEmpty" class="empty-state"><i class="fas fa-user-graduate"></i><h3>Pilih Siswa</h3><p>Pilih siswa untuk menginput nilai</p></div>
+            `;
+        }
+
+        function renderNilaiForm() {
+            const sid = document.getElementById('nilaiSiswaSelect').value;
+            document.getElementById('nilaiForm')?.classList.toggle('hidden', !sid);
+            document.getElementById('nilaiEmpty')?.classList.toggle('hidden', !!sid);
+            
+            if (!sid) return;
+            const data = loadData();
+            const grades = data.grades.filter(g => g.student_id === sid);
+            
+            const tugas = grades.filter(g => g.type === 'assignment');
+            document.getElementById('nilaiTugas').value = tugas.length ? (tugas.reduce((a,b)=>a+b.score,0)/tugas.length).toFixed(2) : '';
+            document.getElementById('nilaiKuis').value = grades.find(g=>g.type==='quiz')?.score || '';
+            document.getElementById('nilaiUTS').value = grades.find(g=>g.type==='uts')?.score || '';
+            document.getElementById('nilaiUAS').value = grades.find(g=>g.type==='uas')?.score || '';
+            document.getElementById('nilaiRemidi').value = grades.find(g=>g.type==='remedial')?.score || '';
+            calcNilaiAkhir();
+        }
+
+        function calcNilaiAkhir() {
+            const tugas = parseFloat(document.getElementById('nilaiTugas').value) || 0;
+            const uts = parseFloat(document.getElementById('nilaiUTS').value) || 0;
+            let uas = parseFloat(document.getElementById('nilaiUAS').value) || 0;
+            const remidi = parseFloat(document.getElementById('nilaiRemidi').value) || 0;
+            if (remidi > uas) uas = remidi;
+            const akhir = (tugas * 0.4) + (uts * 0.3) + (uas * 0.3);
+            document.getElementById('nilaiAkhirDisplay').textContent = akhir > 0 ? akhir.toFixed(2) : '-';
+        }
+
+        function saveNilai() {
+            const sid = document.getElementById('nilaiSiswaSelect').value;
+            if (!sid) return;
+            
+            const data = loadData();
+            const types = [
+                { type: 'assignment', score: parseFloat(document.getElementById('nilaiTugas').value) || 0 },
+                { type: 'quiz', score: parseFloat(document.getElementById('nilaiKuis').value) || 0 },
+                { type: 'uts', score: parseFloat(document.getElementById('nilaiUTS').value) || 0 },
+                { type: 'uas', score: parseFloat(document.getElementById('nilaiUAS').value) || 0 },
+                { type: 'remedial', score: parseFloat(document.getElementById('nilaiRemidi').value) || 0 }
+            ];
+            
+            data.grades = data.grades.filter(g => g.student_id !== sid);
+            types.forEach(t => {
+                if (t.score > 0) data.grades.push({ id: generateId(), student_id: sid, type: t.type, score: t.score });
+            });
+            saveData(data);
+            showToast('Nilai disimpan!', 'success');
+        }
+
+        // ==================== LAPORAN PAGE ====================
+        function renderLaporan(container) {
+            container.innerHTML = `
+                <div class="tabs mb-3">
+                    <button class="tab active" onclick="switchLaporanTab('grades')"><i class="fas fa-chart-bar"></i> Rekap Nilai</button>
+                    <button class="tab" onclick="switchLaporanTab('attendance')"><i class="fas fa-clipboard-check"></i> Absensi</button>
+                </div>
+                <div id="laporanGrades" class="tab-content active">
+                    <div class="report-filters">
+                        <div class="export-buttons">
+                            <button class="btn btn-primary" onclick="exportGradesPDF()"><i class="fas fa-file-pdf"></i> PDF</button>
+                            <button class="btn btn-success" onclick="exportGradesExcel()"><i class="fas fa-file-excel"></i> Excel</button>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="table-container" style="box-shadow:none">
+                            <table><thead><tr><th>Peringkat</th><th>Nama</th><th>NIS</th><th>Kelas</th><th>Tugas</th><th>Kuis</th><th>UTS</th><th>UAS</th><th>Remidi</th><th>Nilai Akhir</th></tr></thead>
+                            <tbody id="gradesRecapBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div id="laporanAttendance" class="tab-content">
+                    <div class="report-filters">
+                        <button class="btn btn-primary" onclick="exportAbsenPDF()"><i class="fas fa-file-pdf"></i> PDF</button>
+                        <button class="btn btn-success" onclick="exportAbsenExcel()"><i class="fas fa-file-excel"></i> Excel</button>
+                    </div>
+                    <div class="card">
+                        <div class="table-container" style="box-shadow:none">
+                            <table><thead><tr><th>Pertemuan</th><th>Tanggal</th><th>Nama</th><th>Kelas</th><th>Status</th></tr></thead>
+                            <tbody id="absenRecapBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `;
+            renderGradesRecap();
+            renderAbsenRecap();
+        }
+
+        function switchLaporanTab(tab) {
+            document.querySelectorAll('#laporan .tab').forEach(t => t.classList.remove('active'));
+            if (tab === 'grades') {
+                document.querySelectorAll('#laporan .tab')[0]?.classList.add('active');
+                document.getElementById('laporanGrades').classList.add('active');
+                document.getElementById('laporanAttendance').classList.remove('active');
+            } else {
+                document.querySelectorAll('#laporan .tab')[1]?.classList.add('active');
+                document.getElementById('laporanGrades').classList.remove('active');
+                document.getElementById('laporanAttendance').classList.add('active');
+            }
+        }
+
+        function getGradesRecap() {
+            const data = loadData();
+            return data.students.map(s => {
+                const grades = data.grades.filter(g => g.student_id === s.id);
+                const tugas = grades.filter(g => g.type === 'assignment');
+                const tugasAvg = tugas.length ? tugas.reduce((a,b)=>a+b.score,0)/tugas.length : 0;
+                const kuis = grades.find(g=>g.type==='quiz')?.score || 0;
+                const uts = grades.find(g=>g.type==='uts')?.score || 0;
+                let uas = grades.find(g=>g.type==='uas')?.score || 0;
+                const remidi = grades.find(g=>g.type==='remedial');
+                if (remidi && remidi.score > uas) uas = remidi.score;
+                const final = (tugasAvg * 0.4) + (uts * 0.3) + (uas * 0.3);
+                return { id: s.id, name: s.name, nis: s.nis, class: s.class, tugas: tugasAvg.toFixed(2), kuis, uts, uas, remidi: remidi?.score||null, final: final.toFixed(2) };
+            }).sort((a,b) => parseFloat(b.final) - parseFloat(a.final)).map((r,i) => ({...r, rank: i+1}));
+        }
+
+        function renderGradesRecap() {
+            const recap = getGradesRecap();
+            const tbody = document.getElementById('gradesRecapBody');
+            if (!recap.length) { tbody.innerHTML = '<tr><td colspan="10" class="text-center">Belum ada data</td></tr>'; return; }
+            tbody.innerHTML = recap.map(r => {
+                const rankClass = r.rank===1?'rank-1':r.rank===2?'rank-2':r.rank===3?'rank-3':'';
+                return `<tr class="${rankClass}"><td><strong>${r.rank}</strong></td><td>${r.name}</td><td>${r.nis}</td><td>${r.class}</td><td>${r.tugas}</td><td>${r.kuis}</td><td>${r.uts}</td><td>${r.uas}</td><td>${r.remidi||'-'}</td><td><strong>${r.final}</strong></td></tr>`;
+            }).join('');
+        }
+
+        function renderAbsenRecap() {
+            const data = loadData();
+            const tbody = document.getElementById('absenRecapBody');
+            const sorted = [...data.attendance].sort((a, b) => b.meeting - a.meeting);
+            if (!sorted.length) { tbody.innerHTML = '<tr><td colspan="5" class="text-center">Belum ada data</td></tr>'; return; }
+            tbody.innerHTML = sorted.map(a => {
+                const s = data.students.find(stu => stu.id === a.student_id);
+                const badges = { H: 'badge-hadir', S: 'badge-sakit', I: 'badge-izin', A: 'badge-alpha' };
+                const texts = { H: 'Hadir', S: 'Sakit', I: 'Izin', A: 'Alpha' };
+                return `<tr><td>${a.meeting}</td><td>${formatDate(a.date)}</td><td>${s?.name||'-'}</td><td>${s?.class||'-'}</td><td><span class="badge ${badges[a.status]}">${texts[a.status]}</span></td></tr>`;
+            }).join('');
+        }
+
+        // Export functions
+        function exportGradesPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            doc.text('Rekap Nilai & Peringkat', 14, 20);
+            const recap = getGradesRecap();
+            doc.autoTable({
+                head: [['Rank','Nama','NIS','Kelas','Tugas','Kuis','UTS','UAS','Remidi','Nilai Akhir']],
+                body: recap.map(r=>[r.rank,r.name,r.nis,r.class,r.tugas,r.kuis,r.uts,r.uas,r.remidi||'-',r.final]),
+                startY: 25,
+                styles: { fontSize: 8 },
+                headStyles: { fillColor: [30, 58, 95] }
+            });
+            doc.save('rekap-nilai.pdf');
+            showToast('PDF diunduh!', 'success');
+        }
+
+        function exportGradesExcel() {
+            const recap = getGradesRecap();
+            const ws = XLSX.utils.json_to_sheet(recap.map(r => ({Peringkat:r.rank,Nama:r.name,NIS:r.nis,Kelas:r.class,Tugas:r.tugas,Kuis:r.kuis,UTS:r.uts,UAS:r.uas,Remidi:r.remidi,NilaiAkhir:r.final})));
+            XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(XLSX.utils.book_new(), ws, 'Nilai');
+            XLSX.writeFile(XLSX.utils.book_new(), 'rekap-nilai.xlsx');
+            showToast('Excel diunduh!', 'success');
+        }
+
+        function exportAbsenPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            doc.text('Laporan Absensi', 14, 20);
+            const data = loadData();
+            const sorted = [...data.attendance].sort((a,b) => b.meeting - a.meeting);
+            doc.autoTable({
+                head: [['Pertemuan','Tanggal','Nama','Kelas','Status']],
+                body: sorted.map(a => {
+                    const s = data.students.find(stu => stu.id === a.student_id);
+                    const texts = { H: 'Hadir', S: 'Sakit', I: 'Izin', A: 'Alpha' };
+                    return [a.meeting, formatDate(a.date), s?.name||'-', s?.class||'-', texts[a.status]];
+                }),
+                startY: 25,
+                styles: { fontSize: 8 },
+                headStyles: { fillColor: [30, 58, 95] }
+            });
+            doc.save('laporan-absensi.pdf');
+            showToast('PDF diunduh!', 'success');
+        }
+
+        function exportAbsenExcel() {
+            const data = loadData();
+            const sorted = [...data.attendance].sort((a,b) => b.meeting - a.meeting);
+            const rows = sorted.map(a => {
+                const s = data.students.find(stu => stu.id === a.student_id);
+                const texts = { H: 'Hadir', S: 'Sakit', I: 'Izin', A: 'Alpha' };
+                return {Pertemuan: a.meeting, Tanggal: formatDate(a.date), Nama: s?.name, Kelas: s?.class, Status: texts[a.status]};
+            });
+            const ws = XLSX.utils.json_to_sheet(rows);
+            XLSX.writeFile({SheetNames:['Absensi'], Sheets:{Absensi:ws}}, 'laporan-absensi.xlsx');
+            showToast('Excel diunduh!', 'success');
+        }
+
+        function clearData() {
+            if (confirm('Hapus SEMUA data? Tindakan ini tidak dapat dikembalikan!')) {
+                localStorage.removeItem(STORAGE_KEY);
+                showToast('Data dihapus!', 'success');
+                navigateTo('dashboard');
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => navigateTo('dashboard'));
+    </script>
+</body>
+</html>
+

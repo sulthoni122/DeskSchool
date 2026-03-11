@@ -1,0 +1,15 @@
+{
+  "name": "guru-app",
+  "version": "1.0.0",
+  "description": "GuruDesk - Teacher Classroom Management Web Application",
+  "main": "backend/server.js",
+  "scripts": {
+    "start": "node backend/server.js",
+    "dev": "node backend/server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5"
+  }
+}
+

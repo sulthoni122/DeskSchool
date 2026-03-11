@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nilai - GuruDesk</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Overlay (Mobile) -->
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+        
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">
+                    <div class="logo-icon">
+                        <i class="fas fa-graduation-cap"></i>
+                    </div>
+                    <span class="logo-text">GuruDesk</span>
+                </div>
+            </div>
+            <nav class="sidebar-nav">
+                <div class="nav-section">
+                    <div class="nav-section-title">Menu Utama</div>
+                    <a href="dashboard.html" class="nav-item">
+                        <i class="fas fa-th-large"></i>
+                        <span>Dashboard</span>
+                    </a>
+                    <a href="siswa.html" class="nav-item">
+                        <i class="fas fa-users"></i>
+                        <span>Siswa</span>
+                    </a>
+                    <a href="absensi.html" class="nav-item">
+                        <i class="fas fa-clipboard-check"></i>
+                        <span>Absensi</span>
+                    </a>
+                    <a href="nilai.html" class="nav-item active">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Nilai</span>
+                    </a>
+                    <a href="laporan.html" class="nav-item">
+                        <i class="fas fa-file-alt"></i>
+                        <span>Laporan</span>
+                    </a>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Top Bar -->
+            <header class="topbar">
+                <div class="topbar-left">
+                    <button class="mobile-menu-btn" id="mobileMenuBtn">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <h1 class="topbar-title">Nilai</h1>
+                </div>
+                <div class="topbar-right">
+                    <button class="topbar-btn" title="Notifications">
+                        <i class="fas fa-bell"></i>
+                    </button>
+                    <div class="user-profile">
+                        <div class="user-avatar">G</div>
+                        <span class="user-name">Guru</span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Page Content -->
+            <div class="page-content">
+                <!-- Page Header -->
+                <div class="page-header">
+                    <h1 class="page-title">Kelola Nilai</h1>
+                </div>
+
+                <!-- Student Selector -->
+                <div class="card mb-3">
+                    <div style="display: flex; gap: 16px; flex-wrap: wrap; align-items: flex-end;">
+                        <div class="form-group" style="margin-bottom: 0; flex: 1; min-width: 250px;">
+                            <label class="form-label">Pilih Siswa</label>
+                            <select class="form-control" id="studentSelect" onchange="loadStudentGrades()">
+                                <option value="">-- Pilih Siswa --</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Grade Input Form -->
+                <div id="gradeForm" class="grade-form hidden">
+                    <div class="card-header">
+                        <h3 class="card-title">Input Nilai</h3>
+                    </div>
+                    
+                    <div class="grade-inputs mt-3">
+                        <!-- Assignment -->
+                        <div class="grade-input-group">
+                            <label>Tugas (Rata-rata)</label>
+                            <input type="number" id="assignmentScore" min="0" max="100" placeholder="0-100" oninput="calculateFinalGrade()">
+                        </div>
+                        
+                        <!-- Quiz -->
+                        <div class="grade-input-group">
+                            <label>Kuis</label>
+                            <input type="number" id="quizScore" min="0" max="100" placeholder="0-100" oninput="calculateFinalGrade()">
+                        </div>
+                        
+                        <!-- UTS -->
+                        <div class="grade-input-group">
+                            <label>UTS</label>
+                            <input type="number" id="utsScore" min="0" max="100" placeholder="0-100" oninput="calculateFinalGrade()">
+                        </div>
+                        
+                        <!-- UAS -->
+                        <div class="grade-input-group">
+                            <label>UAS</label>
+                            <input type="number" id="uasScore" min="0" max="100" placeholder="0-100" oninput="calculateFinalGrade()">
+                        </div>
+                        
+                        <!-- Remedial -->
+                        <div class="grade-input-group" style="background: rgba(243, 156, 18, 0.1);">
+                            <label>Remidi (Opsional)</label>
+                            <input type="number" id="remedialScore" min="0" max="100" placeholder="0-100" oninput="calculateFinalGrade()">
+                        </div>
+                    </div>
+
+                    <!-- Final Grade Preview -->
+                    <div class="card mt-3" style="background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%); color: white;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <div style="font-size: 14px; opacity: 0.9;">Nilai Akhir</div>
+                                <div style="font-size: 36px; font-weight: 700;" id="finalGradeDisplay">-</div>
+                            </div>
+                            <div class="text-right">
+                                <div style="font-size: 14px; opacity: 0.9;">Rumus:</div>
+                                <div style="font-size: 12px; opacity: 0.8;">(Tugas × 40%) + (UTS × 30%) + (UAS × 30%)</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button class="btn btn-primary" onclick="saveGrades()">
+                            <i class="fas fa-save"></i> Simpan Nilai
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Empty State -->
+                <div id="emptyState" class="empty-state">
+                    <i class="fas fa-user-graduate"></i>
+                    <h3>Pilih Siswa</h3>
+                    <p>Pilih siswa di atas untuk menginput nilai</p>
+                </div>
+
+                <!-- Current Grades Table -->
+                <div id="gradesTable" class="card mt-3 hidden">
+                    <div class="card-header">
+                        <h3 class="card-title">Nilai Tersimpan</h3>
+                    </div>
+                    <div class="table-container" style="box-shadow: none;">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Jenis Nilai</th>
+                                    <th>Nilai</th>
+                                    <th>Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="gradesTableBody">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script>
+        // Mobile menu toggle
+        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        const sidebar = document.getElementById('sidebar');
+        const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+        mobileMenuBtn.addEventListener('click', () => {
+            sidebar.classList.toggle('active');
+            sidebarOverlay.classList.toggle('active');
+        });
+
+        sidebarOverlay.addEventListener('click', () => {
+            sidebar.classList.remove('active');
+            sidebarOverlay.classList.remove('active');
+        });
+
+        // State
+        let students = [];
+        let currentStudentId = null;
+        let currentGrades = {};
+
+        // Load students on page load
+        async function loadStudents() {
+            try {
+                const response = await fetch('/api/students');
+                students = await response.json();
+
+                const select = document.getElementById('studentSelect');
+                select.innerHTML = '<option value="">-- Pilih Siswa --</option>' + 
+                    students.map(s => `<option value="${s.id}">${s.name} - ${s.nis} (${s.class})</option>`).join('');
+            } catch (error) {
+                console.error('Error loading students:', error);
+                showToast('Gagal memuat data siswa', 'error');
+            }
+        }
+
+        // Load grades for selected student
+        async function loadStudentGrades() {
+            const studentId = document.getElementById('studentSelect').value;
+            currentStudentId = studentId;
+
+            if (!studentId) {
+                document.getElementById('gradeForm').classList.add('hidden');
+                document.getElementById('emptyState').classList.remove('hidden');
+                document.getElementById('gradesTable').classList.add('hidden');
+                return;
+            }
+
+            try {
+                // Load existing grades
+                const response = await fetch(`/api/grades?student_id=${studentId}`);
+                const grades = await response.json();
+
+                // Reset current grades
+                currentGrades = {};
+                grades.forEach(g => {
+                    currentGrades[g.type] = g;
+                });
+
+                // Fill form
+                document.getElementById('assignmentScore').value = '';
+                document.getElementById('quizScore').value = '';
+                document.getElementById('utsScore').value = '';
+                document.getElementById('uasScore').value = '';
+                document.getElementById('remedialScore').value = '';
+
+                // Calculate assignment average if multiple assignments exist
+                const assignments = grades.filter(g => g.type === 'assignment');
+                if (assignments.length > 0) {
+                    const avg = assignments.reduce((sum, g) => sum + g.score, 0) / assignments.length;
+                    document.getElementById('assignmentScore').value = avg.toFixed(2);
+                }
+
+                // Load other grades
+                const quiz = grades.find(g => g.type === 'quiz');
+                if (quiz) document.getElementById('quizScore').value = quiz.score;
+
+                const uts = grades.find(g => g.type === 'uts');
+                if (uts) document.getElementById('utsScore').value = uts.score;
+
+                const uas = grades.find(g => g.type === 'uas');
+                if (uas) document.getElementById('uasScore').value = uas.score;
+
+                const remedial = grades.find(g => g.type === 'remedial');
+                if (remedial) document.getElementById('remedialScore').value = remedial.score;
+
+                // Show form and grades table
+                document.getElementById('gradeForm').classList.remove('hidden');
+                document.getElementById('emptyState').classList.add('hidden');
+                document.getElementById('gradesTable').classList.remove('hidden');
+
+                // Render grades table
+                renderGradesTable(grades);
+
+                // Calculate final grade
+                calculateFinalGrade();
+
+            } catch (error) {
+                console.error('Error loading grades:', error);
+                showToast('Gagal memuat nilai', 'error');
+            }
+        }
+
+        // Render grades table
+        function renderGradesTable(grades) {
+            const tbody = document.getElementById('gradesTableBody');
+            const typeLabels = {
+                'assignment': 'Tugas',
+                'quiz': 'Kuis',
+                'uts': 'UTS',
+                'uas': 'UAS',
+                'remedial': 'Remidi'
+            };
+
+            if (grades.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="3" class="text-center" style="padding: 20px; color: var(--text-secondary);">
+                            Belum ada nilai untuk siswa ini
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = grades.map(g => `
+                <tr>
+                    <td>${typeLabels[g.type] || g.type}</td>
+                    <td><strong>${g.score}</strong></td>
+                    <td>
+                        <button class="btn btn-sm btn-danger" onclick="deleteGrade(${g.id})">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // Calculate final grade
+        function calculateFinalGrade() {
+            const assignment = parseFloat(document.getElementById('assignmentScore').value) || 0;
+            const quiz = parseFloat(document.getElementById('quizScore').value) || 0;
+            const uts = parseFloat(document.getElementById('utsScore').value) || 0;
+            let uas = parseFloat(document.getElementById('uasScore').value) || 0;
+            const remedial = parseFloat(document.getElementById('remedialScore').value) || 0;
+
+            // If remedial is higher than UAS, use remedial for UAS
+            if (remedial > uas) {
+                uas = remedial;
+            }
+
+            // Formula: (assignment * 40%) + (UTS * 30%) + (UAS * 30%)
+            const finalGrade = (assignment * 0.4) + (uts * 0.3) + (uas * 0.3);
+
+            document.getElementById('finalGradeDisplay').textContent = finalGrade > 0 ? finalGrade.toFixed(2) : '-';
+        }
+
+        // Save grades
+        async function saveGrades() {
+            if (!currentStudentId) {
+                showToast('Pilih siswa terlebih dahulu', 'warning');
+                return;
+            }
+
+            const grades = [
+                { type: 'assignment', score: parseFloat(document.getElementById('assignmentScore').value) || 0 },
+                { type: 'quiz', score: parseFloat(document.getElementById('quizScore').value) || 0 },
+                { type: 'uts', score: parseFloat(document.getElementById('utsScore').value) || 0 },
+                { type: 'uas', score: parseFloat(document.getElementById('uasScore').value) || 0 },
+                { type: 'remedial', score: parseFloat(document.getElementById('remedialScore').value) || 0 }
+            ];
+
+            try {
+                for (const grade of grades) {
+                    if (grade.score > 0) {
+                        await fetch('/api/grades', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                student_id: parseInt(currentStudentId),
+                                type: grade.type,
+                                score: grade.score
+                            })
+                        });
+                    }
+                }
+
+                showToast('Nilai berhasil disimpan', 'success');
+                loadStudentGrades(); // Refresh
+            } catch (error) {
+                console.error('Error saving grades:', error);
+                showToast('Gagal menyimpan nilai', 'error');
+            }
+        }
+
+        // Delete grade
+        async function deleteGrade(gradeId) {
+            if (!confirm('Hapus nilai ini?')) return;
+
+            try {
+                await fetch(`/api/grades/${gradeId}`, {
+                    method: 'DELETE'
+                });
+
+                showToast('Nilai berhasil dihapus', 'success');
+                loadStudentGrades(); // Refresh
+            } catch (error) {
+                console.error('Error deleting grade:', error);
+                showToast('Gagal menghapus nilai', 'error');
+            }
+        }
+
+        // Toast notification
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            
+            let icon = '';
+            switch(type) {
+                case 'success': icon = 'fa-check-circle'; break;
+                case 'error': icon = 'fa-times-circle'; break;
+                case 'warning': icon = 'fa-exclamation-circle'; break;
+                default: icon = 'fa-info-circle';
+            }
+            
+            toast.innerHTML = `<i class="fas ${icon}"></i> <span>${message}</span>`;
+            container.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.remove();
+            }, 3000);
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', loadStudents);
+    </script>
+</body>
+</html>
+

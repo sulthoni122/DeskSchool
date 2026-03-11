@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - GuruDesk</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Overlay (Mobile) -->
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+        
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">
+                    <div class="logo-icon">
+                        <i class="fas fa-graduation-cap"></i>
+                    </div>
+                    <span class="logo-text">GuruDesk</span>
+                </div>
+            </div>
+            <nav class="sidebar-nav">
+                <div class="nav-section">
+                    <div class="nav-section-title">Menu Utama</div>
+                    <a href="dashboard.html" class="nav-item active">
+                        <i class="fas fa-th-large"></i>
+                        <span>Dashboard</span>
+                    </a>
+                    <a href="siswa.html" class="nav-item">
+                        <i class="fas fa-users"></i>
+                        <span>Siswa</span>
+                    </a>
+                    <a href="absensi.html" class="nav-item">
+                        <i class="fas fa-clipboard-check"></i>
+                        <span>Absensi</span>
+                    </a>
+                    <a href="nilai.html" class="nav-item">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Nilai</span>
+                    </a>
+                    <a href="laporan.html" class="nav-item">
+                        <i class="fas fa-file-alt"></i>
+                        <span>Laporan</span>
+                    </a>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Top Bar -->
+            <header class="topbar">
+                <div class="topbar-left">
+                    <button class="mobile-menu-btn" id="mobileMenuBtn">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <h1 class="topbar-title">Dashboard</h1>
+                </div>
+                <div class="topbar-right">
+                    <button class="topbar-btn" title="Notifications">
+                        <i class="fas fa-bell"></i>
+                    </button>
+                    <div class="user-profile">
+                        <div class="user-avatar">G</div>
+                        <span class="user-name">Guru</span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Page Content -->
+            <div class="page-content">
+                <!-- Stats Cards -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon blue">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="totalStudents">0</h3>
+                            <p>Total Siswa</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon green">
+                            <i class="fas fa-school"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="totalClasses">0</h3>
+                            <p>Total Kelas</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon orange">
+                            <i class="fas fa-star"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="classAverage">0</h3>
+                            <p>Rata-rata Nilai</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon red">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="remedialCount">0</h3>
+                            <p>Perlu Remidi</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chart and Recent Activity -->
+                <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px;">
+                    <!-- Attendance Chart -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Statistik Absensi</h3>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="attendanceChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Quick Stats -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Info Cepat</h3>
+                        </div>
+                        <div style="padding: 10px 0;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border);">
+                                <div>
+                                    <div style="font-weight: 600;">Hadir Hari Ini</div>
+                                    <div style="font-size: 12px; color: var(--text-secondary);">Semua kelas</div>
+                                </div>
+                                <div style="font-size: 24px; font-weight: 700; color: var(--success);" id="presentToday">0</div>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border);">
+                                <div>
+                                    <div style="font-weight: 600;">Meeting Terakhir</div>
+                                    <div style="font-size: 12px; color: var(--text-secondary);">Pertemuan aktif</div>
+                                </div>
+                                <div style="font-size: 24px; font-weight: 700; color: var(--primary);" id="lastMeeting">0</div>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0;">
+                                <div>
+                                    <div style="font-weight: 600;">Nilai Terinput</div>
+                                    <div style="font-size: 12px; color: var(--text-secondary);">Total nilai</div>
+                                </div>
+                                <div style="font-size: 24px; font-weight: 700; color: var(--accent);" id="totalGrades">0</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script>
+        // Mobile menu toggle
+        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        const sidebar = document.getElementById('sidebar');
+        const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+        mobileMenuBtn.addEventListener('click', () => {
+            sidebar.classList.toggle('active');
+            sidebarOverlay.classList.toggle('active');
+        });
+
+        sidebarOverlay.addEventListener('click', () => {
+            sidebar.classList.remove('active');
+            sidebarOverlay.classList.remove('active');
+        });
+
+        // Chart instance
+        let attendanceChart = null;
+
+        // Load dashboard data
+        async function loadDashboardData() {
+            try {
+                // Load stats
+                const statsRes = await fetch('/api/dashboard/stats');
+                const stats = await statsRes.json();
+                
+                document.getElementById('totalStudents').textContent = stats.totalStudents;
+                document.getElementById('totalClasses').textContent = stats.totalClasses;
+                document.getElementById('classAverage').textContent = stats.classAverage;
+                document.getElementById('remedialCount').textContent = stats.remedialStudents;
+
+                // Load attendance stats for chart
+                const attendanceRes = await fetch('/api/attendance/stats');
+                const attendanceStats = await attendanceRes.json();
+                
+                renderAttendanceChart(attendanceStats);
+
+                // Quick stats
+                const studentsRes = await fetch('/api/students');
+                const students = await studentsRes.json();
+                document.getElementById('presentToday').textContent = students.length;
+
+                // Get last meeting
+                const meetingRes = await fetch('/api/attendance');
+                const meetings = await meetingRes.json();
+                const meetingsNum = [...new Set(meetings.map(m => m.meeting))];
+                document.getElementById('lastMeeting').textContent = meetingsNum.length > 0 ? Math.max(...meetingsNum) : 0;
+
+                // Get total grades
+                const gradesRes = await fetch('/api/grades');
+                const grades = await gradesRes.json();
+                document.getElementById('totalGrades').textContent = grades.length;
+
+            } catch (error) {
+                console.error('Error loading dashboard:', error);
+                showToast('Gagal memuat data dashboard', 'error');
+            }
+        }
+
+        // Render attendance chart
+        function renderAttendanceChart(data) {
+            const ctx = document.getElementById('attendanceChart').getContext('2d');
+            
+            if (attendanceChart) {
+                attendanceChart.destroy();
+            }
+
+            const labels = data.map(d => `Pertemuan ${d.meeting}`);
+            const hadirData = data.map(d => d.hadir);
+            const sakitData = data.map(d => d.sakit);
+            const izinData = data.map(d => d.izin);
+            const alphaData = data.map(d => d.alpha);
+
+            attendanceChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Hadir',
+                            data: hadirData,
+                            backgroundColor: '#27AE60',
+                        },
+                        {
+                            label: 'Sakit',
+                            data: sakitData,
+                            backgroundColor: '#F39C12',
+                        },
+                        {
+                            label: 'Izin',
+                            data: izinData,
+                            backgroundColor: '#3498DB',
+                        },
+                        {
+                            label: 'Alpha',
+                            data: alphaData,
+                            backgroundColor: '#E74C3C',
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            stacked: true,
+                            grid: {
+                                display: false
+                            }
+                        },
+                        y: {
+                            stacked: true,
+                            beginAtZero: true
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+
+        // Toast notification
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            
+            let icon = '';
+            switch(type) {
+                case 'success': icon = 'fa-check-circle'; break;
+                case 'error': icon = 'fa-times-circle'; break;
+                case 'warning': icon = 'fa-exclamation-circle'; break;
+                default: icon = 'fa-info-circle';
+            }
+            
+            toast.innerHTML = `<i class="fas ${icon}"></i> <span>${message}</span>`;
+            container.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.remove();
+            }, 3000);
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', loadDashboardData);
+    </script>
+</body>
+</html>
+
