@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Siswa - GuruDesk</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Overlay (Mobile) -->
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+        
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">
+                    <div class="logo-icon">
+                        <i class="fas fa-graduation-cap"></i>
+                    </div>
+                    <span class="logo-text">GuruDesk</span>
+                </div>
+            </div>
+            <nav class="sidebar-nav">
+                <div class="nav-section">
+                    <div class="nav-section-title">Menu Utama</div>
+                    <a href="dashboard.html" class="nav-item">
+                        <i class="fas fa-th-large"></i>
+                        <span>Dashboard</span>
+                    </a>
+                    <a href="siswa.html" class="nav-item active">
+                        <i class="fas fa-users"></i>
+                        <span>Siswa</span>
+                    </a>
+                    <a href="absensi.html" class="nav-item">
+                        <i class="fas fa-clipboard-check"></i>
+                        <span>Absensi</span>
+                    </a>
+                    <a href="nilai.html" class="nav-item">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Nilai</span>
+                    </a>
+                    <a href="laporan.html" class="nav-item">
+                        <i class="fas fa-file-alt"></i>
+                        <span>Laporan</span>
+                    </a>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Top Bar -->
+            <header class="topbar">
+                <div class="topbar-left">
+                    <button class="mobile-menu-btn" id="mobileMenuBtn">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <h1 class="topbar-title">Data Siswa</h1>
+                </div>
+                <div class="topbar-right">
+                    <button class="topbar-btn" title="Notifications">
+                        <i class="fas fa-bell"></i>
+                    </button>
+                    <div class="user-profile">
+                        <div class="user-avatar">G</div>
+                        <span class="user-name">Guru</span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Page Content -->
+            <div class="page-content">
+                <!-- Page Header -->
+                <div class="page-header">
+                    <h1 class="page-title">Kelola Data Siswa</h1>
+                    <button class="btn btn-primary" onclick="openModal()">
+                        <i class="fas fa-plus"></i> Tambah Siswa
+                    </button>
+                </div>
+
+                <!-- Search -->
+                <div class="card mb-3">
+                    <div class="search-box" style="max-width: 400px;">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="searchInput" placeholder="Cari siswa..." oninput="searchStudents()">
+                    </div>
+                </div>
+
+                <!-- Students Table -->
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>No</th>
+                                <th>Nama</th>
+                                <th>NIS</th>
+                                <th>Kelas</th>
+                                <th>Jenis Kelamin</th>
+                                <th>No. HP Orang Tua</th>
+                                <th>Catatan</th>
+                                <th>Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="studentsTableBody">
+                            <tr>
+                                <td colspan="8" class="text-center">
+                                    <div class="loading">
+                                        <div class="spinner"></div>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Empty State -->
+                <div id="emptyState" class="empty-state hidden">
+                    <i class="fas fa-users"></i>
+                    <h3>Belum Ada Siswa</h3>
+                    <p>Tambahkan siswa untuk memulai</p>
+                    <button class="btn btn-primary" onclick="openModal()">
+                        <i class="fas fa-plus"></i> Tambah Siswa
+                    </button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Add/Edit Student Modal -->
+    <div class="modal-overlay" id="studentModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title" id="modalTitle">Tambah Siswa</h3>
+                <button class="modal-close" onclick="closeModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="studentForm">
+                    <input type="hidden" id="studentId">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Nama Lengkap *</label>
+                            <input type="text" class="form-control" id="studentName" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">NIS *</label>
+                            <input type="text" class="form-control" id="studentNis" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Kelas *</label>
+                            <select class="form-control" id="studentClass" required>
+                                <option value="">Pilih Kelas</option>
+                                <option value="X IPA 1">X IPA 1</option>
+                                <option value="X IPA 2">X IPA 2</option>
+                                <option value="X IPS 1">X IPS 1</option>
+                                <option value="X IPS 2">X IPS 2</option>
+                                <option value="XI IPA 1">XI IPA 1</option>
+                                <option value="XI IPA 2">XI IPA 2</option>
+                                <option value="XI IPS 1">XI IPS 1</option>
+                                <option value="XI IPS 2">XI IPS 2</option>
+                                <option value="XII IPA 1">XII IPA 1</option>
+                                <option value="XII IPA 2">XII IPA 2</option>
+                                <option value="XII IPS 1">XII IPS 1</option>
+                                <option value="XII IPS 2">XII IPS 2</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Jenis Kelamin *</label>
+                            <select class="form-control" id="studentGender" required>
+                                <option value="">Pilih Jenis Kelamin</option>
+                                <option value="L">Laki-laki</option>
+                                <option value="P">Perempuan</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">No. HP Orang Tua</label>
+                        <input type="text" class="form-control" id="studentPhone" placeholder="Contoh: 081234567890">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Catatan</label>
+                        <textarea class="form-control" id="studentNotes" rows="3" placeholder="Catatan tambahan tentang siswa..."></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal()">Batal</button>
+                <button class="btn btn-primary" onclick="saveStudent()">
+                    <i class="fas fa-save"></i> Simpan
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal-overlay" id="deleteModal">
+        <div class="modal" style="max-width: 400px;">
+            <div class="modal-header">
+                <h3 class="modal-title">Hapus Siswa</h3>
+                <button class="modal-close" onclick="closeDeleteModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>Apakah Anda yakin ingin menghapus siswa <strong id="deleteStudentName"></strong>?</p>
+                <p style="color: var(--danger); font-size: 13px; margin-top: 10px;">
+                    <i class="fas fa-exclamation-triangle"></i> Data absensi dan nilai siswa juga akan dihapus.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeDeleteModal()">Batal</button>
+                <button class="btn btn-danger" onclick="confirmDelete()">
+                    <i class="fas fa-trash"></i> Hapus
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script>
+        // Mobile menu toggle
+        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        const sidebar = document.getElementById('sidebar');
+        const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+        mobileMenuBtn.addEventListener('click', () => {
+            sidebar.classList.toggle('active');
+            sidebarOverlay.classList.toggle('active');
+        });
+
+        sidebarOverlay.addEventListener('click', () => {
+            sidebar.classList.remove('active');
+            sidebarOverlay.classList.remove('active');
+        });
+
+        // State
+        let students = [];
+        let deleteStudentId = null;
+
+        // Load students
+        async function loadStudents() {
+            try {
+                const response = await fetch('/api/students');
+                students = await response.json();
+                renderStudents(students);
+            } catch (error) {
+                console.error('Error loading students:', error);
+                showToast('Gagal memuat data siswa', 'error');
+            }
+        }
+
+        // Render students table
+        function renderStudents(data) {
+            const tbody = document.getElementById('studentsTableBody');
+            const emptyState = document.getElementById('emptyState');
+            const tableContainer = document.querySelector('.table-container');
+
+            if (data.length === 0) {
+                tableContainer.style.display = 'none';
+                emptyState.classList.remove('hidden');
+                return;
+            }
+
+            tableContainer.style.display = 'block';
+            emptyState.classList.add('hidden');
+
+            tbody.innerHTML = data.map((student, index) => `
+                <tr>
+                    <td>${index + 1}</td>
+                    <td><strong>${student.name}</strong></td>
+                    <td>${student.nis}</td>
+                    <td>${student.class}</td>
+                    <td>${student.gender === 'L' ? 'Laki-laki' : 'Perempuan'}</td>
+                    <td>${student.parent_phone || '-'}</td>
+                    <td>${student.notes || '-'}</td>
+                    <td>
+                        <div class="table-actions">
+                            <button class="btn btn-sm btn-secondary" onclick="editStudent(${student.id})" title="Edit">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteStudent(${student.id}, '${student.name}')" title="Hapus">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // Search students
+        function searchStudents() {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            const filtered = students.filter(s => 
+                s.name.toLowerCase().includes(query) ||
+                s.nis.toLowerCase().includes(query) ||
+                s.class.toLowerCase().includes(query)
+            );
+            renderStudents(filtered);
+        }
+
+        // Modal functions
+        function openModal() {
+            document.getElementById('studentModal').classList.add('active');
+            document.getElementById('modalTitle').textContent = 'Tambah Siswa';
+            document.getElementById('studentForm').reset();
+            document.getElementById('studentId').value = '';
+        }
+
+        function closeModal() {
+            document.getElementById('studentModal').classList.remove('active');
+        }
+
+        // Save student (create or update)
+        async function saveStudent() {
+            const id = document.getElementById('studentId').value;
+            const name = document.getElementById('studentName').value.trim();
+            const nis = document.getElementById('studentNis').value.trim();
+            const studentClass = document.getElementById('studentClass').value;
+            const gender = document.getElementById('studentGender').value;
+            const parent_phone = document.getElementById('studentPhone').value.trim();
+            const notes = document.getElementById('studentNotes').value.trim();
+
+            if (!name || !nis || !studentClass || !gender) {
+                showToast('Mohon lengkapi semua field yang wajib diisi', 'warning');
+                return;
+            }
+
+            const data = { name, nis, class: studentClass, gender, parent_phone, notes };
+
+            try {
+                let response;
+                if (id) {
+                    response = await fetch(`/api/students/${id}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(data)
+                    });
+                } else {
+                    response = await fetch('/api/students', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(data)
+                    });
+                }
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(result.error || 'Gagal menyimpan data');
+                }
+
+                showToast(id ? 'Data siswa berhasil diperbarui' : 'Siswa berhasil ditambahkan', 'success');
+                closeModal();
+                loadStudents();
+            } catch (error) {
+                console.error('Error saving student:', error);
+                showToast(error.message, 'error');
+            }
+        }
+
+        // Edit student
+        async function editStudent(id) {
+            try {
+                const response = await fetch(`/api/students/${id}`);
+                const student = await response.json();
+
+                document.getElementById('studentId').value = student.id;
+                document.getElementById('studentName').value = student.name;
+                document.getElementById('studentNis').value = student.nis;
+                document.getElementById('studentClass').value = student.class;
+                document.getElementById('studentGender').value = student.gender;
+                document.getElementById('studentPhone').value = student.parent_phone || '';
+                document.getElementById('studentNotes').value = student.notes || '';
+
+                document.getElementById('modalTitle').textContent = 'Edit Siswa';
+                document.getElementById('studentModal').classList.add('active');
+            } catch (error) {
+                console.error('Error loading student:', error);
+                showToast('Gagal memuat data siswa', 'error');
+            }
+        }
+
+        // Delete student
+        function deleteStudent(id, name) {
+            deleteStudentId = id;
+            document.getElementById('deleteStudentName').textContent = name;
+            document.getElementById('deleteModal').classList.add('active');
+        }
+
+        function closeDeleteModal() {
+            document.getElementById('deleteModal').classList.remove('active');
+            deleteStudentId = null;
+        }
+
+        async function confirmDelete() {
+            if (!deleteStudentId) return;
+
+            try {
+                const response = await fetch(`/api/students/${deleteStudentId}`, {
+                    method: 'DELETE'
+                });
+
+                if (!response.ok) {
+                    throw new Error('Gagal menghapus data');
+                }
+
+                showToast('Siswa berhasil dihapus', 'success');
+                closeDeleteModal();
+                loadStudents();
+            } catch (error) {
+                console.error('Error deleting student:', error);
+                showToast('Gagal menghapus siswa', 'error');
+            }
+        }
+
+        // Toast notification
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            
+            let icon = '';
+            switch(type) {
+                case 'success': icon = 'fa-check-circle'; break;
+                case 'error': icon = 'fa-times-circle'; break;
+                case 'warning': icon = 'fa-exclamation-circle'; break;
+                default: icon = 'fa-info-circle';
+            }
+            
+            toast.innerHTML = `<i class="fas ${icon}"></i> <span>${message}</span>`;
+            container.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.remove();
+            }, 3000);
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', loadStudents);
+    </script>
+</body>
+</html>
+

@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Absensi - GuruDesk</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Overlay (Mobile) -->
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+        
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">
+                    <div class="logo-icon">
+                        <i class="fas fa-graduation-cap"></i>
+                    </div>
+                    <span class="logo-text">GuruDesk</span>
+                </div>
+            </div>
+            <nav class="sidebar-nav">
+                <div class="nav-section">
+                    <div class="nav-section-title">Menu Utama</div>
+                    <a href="dashboard.html" class="nav-item">
+                        <i class="fas fa-th-large"></i>
+                        <span>Dashboard</span>
+                    </a>
+                    <a href="siswa.html" class="nav-item">
+                        <i class="fas fa-users"></i>
+                        <span>Siswa</span>
+                    </a>
+                    <a href="absensi.html" class="nav-item active">
+                        <i class="fas fa-clipboard-check"></i>
+                        <span>Absensi</span>
+                    </a>
+                    <a href="nilai.html" class="nav-item">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Nilai</span>
+                    </a>
+                    <a href="laporan.html" class="nav-item">
+                        <i class="fas fa-file-alt"></i>
+                        <span>Laporan</span>
+                    </a>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Top Bar -->
+            <header class="topbar">
+                <div class="topbar-left">
+                    <button class="mobile-menu-btn" id="mobileMenuBtn">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <h1 class="topbar-title">Absensi</h1>
+                </div>
+                <div class="topbar-right">
+                    <button class="topbar-btn" title="Notifications">
+                        <i class="fas fa-bell"></i>
+                    </button>
+                    <div class="user-profile">
+                        <div class="user-avatar">G</div>
+                        <span class="user-name">Guru</span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Page Content -->
+            <div class="page-content">
+                <!-- Page Header -->
+                <div class="page-header">
+                    <h1 class="page-title">Kelola Absensi</h1>
+                </div>
+
+                <!-- Attendance Controls -->
+                <div class="card mb-3">
+                    <div style="display: flex; gap: 16px; flex-wrap: wrap; align-items: flex-end;">
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label class="form-label">Pertemuan Ke-</label>
+                            <select class="form-control" id="meetingSelect" style="width: 150px;" onchange="loadAttendance()">
+                                <option value="1">1</option>
+                                <option value="2">2</option>
+                                <option value="3">3</option>
+                                <option value="4">4</option>
+                                <option value="5">5</option>
+                                <option value="6">6</option>
+                                <option value="7">7</option>
+                                <option value="8">8</option>
+                                <option value="9">9</option>
+                                <option value="10">10</option>
+                                <option value="11">11</option>
+                                <option value="12">12</option>
+                                <option value="13">13</option>
+                                <option value="14">14</option>
+                                <option value="15">15</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label class="form-label">Tanggal</label>
+                            <input type="date" class="form-control" id="dateInput" style="width: 180px;" value="">
+                        </div>
+                        <button class="btn btn-primary" onclick="loadAttendance()">
+                            <i class="fas fa-search"></i> Load Data
+                        </button>
+                        <button class="btn btn-success" onclick="saveAttendance()">
+                            <i class="fas fa-save"></i> Simpan Absensi
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Tabs -->
+                <div class="tabs mb-3">
+                    <button class="tab active" onclick="switchTab('input')">
+                        <i class="fas fa-pen"></i> Input Absensi
+                    </button>
+                    <button class="tab" onclick="switchTab('history')">
+                        <i class="fas fa-history"></i> Riwayat
+                    </button>
+                </div>
+
+                <!-- Input Tab -->
+                <div id="inputTab" class="tab-content active">
+                    <div id="studentsList" class="attendance-grid">
+                        <div class="loading">
+                            <div class="spinner"></div>
+                        </div>
+                    </div>
+                    
+                    <div id="emptyStudents" class="empty-state hidden">
+                        <i class="fas fa-users"></i>
+                        <h3>Belum Ada Siswa</h3>
+                        <p>Tambahkan siswa terlebih dahulu di menu Data Siswa</p>
+                        <a href="siswa.html" class="btn btn-primary">
+                            <i class="fas fa-plus"></i> Tambah Siswa
+                        </a>
+                    </div>
+                </div>
+
+                <!-- History Tab -->
+                <div id="historyTab" class="tab-content">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Riwayat Absensi</h3>
+                        </div>
+                        <div class="table-container" style="box-shadow: none;">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Pertemuan</th>
+                                        <th>Tanggal</th>
+                                        <th>Nama Siswa</th>
+                                        <th>Kelas</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="historyTableBody">
+                                    <tr>
+                                        <td colspan="5" class="text-center">
+                                            <div class="loading">
+                                                <div class="spinner"></div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script>
+        // Mobile menu toggle
+        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        const sidebar = document.getElementById('sidebar');
+        const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+        mobileMenuBtn.addEventListener('click', () => {
+            sidebar.classList.toggle('active');
+            sidebarOverlay.classList.toggle('active');
+        });
+
+        sidebarOverlay.addEventListener('click', () => {
+            sidebar.classList.remove('active');
+            sidebarOverlay.classList.remove('active');
+        });
+
+        // Set default date to today
+        document.getElementById('dateInput').valueAsDate = new Date();
+
+        // State
+        let students = [];
+        let attendanceData = {};
+
+        // Switch tabs
+        function switchTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            
+            if (tab === 'input') {
+                document.querySelectorAll('.tab')[0].classList.add('active');
+                document.getElementById('inputTab').classList.add('active');
+            } else {
+                document.querySelectorAll('.tab')[1].classList.add('active');
+                document.getElementById('historyTab').classList.add('active');
+                loadHistory();
+            }
+        }
+
+        // Load students and attendance
+        async function loadAttendance() {
+            const meeting = document.getElementById('meetingSelect').value;
+            const date = document.getElementById('dateInput').value;
+
+            try {
+                // Load students
+                const studentsRes = await fetch('/api/students');
+                students = await studentsRes.json();
+
+                // Load existing attendance for this meeting
+                const attendanceRes = await fetch(`/api/attendance?meeting=${meeting}`);
+                const attendance = await attendanceRes.json();
+
+                // Create attendance data map
+                attendanceData = {};
+                attendance.forEach(a => {
+                    attendanceData[a.student_id] = a.status;
+                });
+
+                renderStudents();
+            } catch (error) {
+                console.error('Error loading attendance:', error);
+                showToast('Gagal memuat data absensi', 'error');
+            }
+        }
+
+        // Render students with attendance buttons
+        function renderStudents() {
+            const container = document.getElementById('studentsList');
+            const emptyState = document.getElementById('emptyStudents');
+
+            if (students.length === 0) {
+                container.innerHTML = '';
+                container.classList.add('hidden');
+                emptyState.classList.remove('hidden');
+                return;
+            }
+
+            container.classList.remove('hidden');
+            emptyState.classList.add('hidden');
+
+            container.innerHTML = students.map(student => {
+                const status = attendanceData[student.id] || '';
+                return `
+                    <div class="student-attendance-card">
+                        <div class="student-info">
+                            <div class="student-avatar-sm">
+                                ${student.name.charAt(0).toUpperCase()}
+                            </div>
+                            <div class="student-details">
+                                <h4>${student.name}</h4>
+                                <p>${student.nis} - ${student.class}</p>
+                            </div>
+                        </div>
+                        <div class="attendance-buttons">
+                            <button class="att-btn ${status === 'H' ? 'active hadir' : ''}" 
+                                    onclick="setAttendance(${student.id}, 'H')" 
+                                    title="Hadir">H</button>
+                            <button class="att-btn ${status === 'S' ? 'active sakit' : ''}" 
+                                    onclick="setAttendance(${student.id}, 'S')" 
+                                    title="Sakit">S</button>
+                            <button class="att-btn ${status === 'I' ? 'active izin' : ''}" 
+                                    onclick="setAttendance(${student.id}, 'I')" 
+                                    title="Izin">I</button>
+                            <button class="att-btn ${status === 'A' ? 'active alpha' : ''}" 
+                                    onclick="setAttendance(${student.id}, 'A')" 
+                                    title="Alpha">A</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Set attendance for a student
+        function setAttendance(studentId, status) {
+            attendanceData[studentId] = status;
+            
+            // Re-render to update button styles
+            renderStudents();
+        }
+
+        // Save attendance
+        async function saveAttendance() {
+            const meeting = document.getElementById('meetingSelect').value;
+            const date = document.getElementById('dateInput').value;
+
+            if (!date) {
+                showToast('Mohon pilih tanggal', 'warning');
+                return;
+            }
+
+            if (students.length === 0) {
+                showToast('Tidak ada siswa untuk disimpan', 'warning');
+                return;
+            }
+
+            // Check if any attendance recorded
+            const recorded = Object.keys(attendanceData).length;
+            if (recorded === 0) {
+                showToast('Mohon isi absensi minimal untuk satu siswa', 'warning');
+                return;
+            }
+
+            try {
+                // Save each student's attendance
+                for (const [studentId, status] of Object.entries(attendanceData)) {
+                    await fetch('/api/attendance', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            student_id: parseInt(studentId),
+                            date: date,
+                            meeting: parseInt(meeting),
+                            status: status
+                        })
+                    });
+                }
+
+                showToast('Absensi berhasil disimpan', 'success');
+                loadAttendance(); // Refresh
+            } catch (error) {
+                console.error('Error saving attendance:', error);
+                showToast('Gagal menyimpan absensi', 'error');
+            }
+        }
+
+        // Load history
+        async function loadHistory() {
+            try {
+                const response = await fetch('/api/attendance');
+                const data = await response.json();
+
+                const tbody = document.getElementById('historyTableBody');
+
+                if (data.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="5" class="text-center" style="padding: 40px;">
+                                <i class="fas fa-clipboard-check" style="font-size: 32px; opacity: 0.3;"></i>
+                                <p style="margin-top: 10px; color: var(--text-secondary);">Belum ada riwayat absensi</p>
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+
+                tbody.innerHTML = data.map(record => {
+                    let badgeClass = '';
+                    let statusText = '';
+                    switch(record.status) {
+                        case 'H': 
+                            badgeClass = 'badge-hadir'; 
+                            statusText = 'Hadir';
+                            break;
+                        case 'S': 
+                            badgeClass = 'badge-sakit'; 
+                            statusText = 'Sakit';
+                            break;
+                        case 'I': 
+                            badgeClass = 'badge-izin'; 
+                            statusText = 'Izin';
+                            break;
+                        case 'A': 
+                            badgeClass = 'badge-alpha'; 
+                            statusText = 'Alpha';
+                            break;
+                    }
+                    return `
+                        <tr>
+                            <td>${record.meeting}</td>
+                            <td>${formatDate(record.date)}</td>
+                            <td>${record.student_name}</td>
+                            <td>${record.class}</td>
+                            <td><span class="badge ${badgeClass}">${statusText}</span></td>
+                        </tr>
+                    `;
+                }).join('');
+            } catch (error) {
+                console.error('Error loading history:', error);
+                showToast('Gagal memuat riwayat absensi', 'error');
+            }
+        }
+
+        // Format date
+        function formatDate(dateStr) {
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('id-ID', {
+                day: '2-digit',
+                month: 'long',
+                year: 'numeric'
+            });
+        }
+
+        // Toast notification
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            
+            let icon = '';
+            switch(type) {
+                case 'success': icon = 'fa-check-circle'; break;
+                case 'error': icon = 'fa-times-circle'; break;
+                case 'warning': icon = 'fa-exclamation-circle'; break;
+                default: icon = 'fa-info-circle';
+            }
+            
+            toast.innerHTML = `<i class="fas ${icon}"></i> <span>${message}</span>`;
+            container.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.remove();
+            }, 3000);
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', loadAttendance);
+    </script>
+</body>
+</html>
+

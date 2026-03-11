@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laporan - GuruDesk</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.1/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Overlay (Mobile) -->
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+        
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">
+                    <div class="logo-icon">
+                        <i class="fas fa-graduation-cap"></i>
+                    </div>
+                    <span class="logo-text">GuruDesk</span>
+                </div>
+            </div>
+            <nav class="sidebar-nav">
+                <div class="nav-section">
+                    <div class="nav-section-title">Menu Utama</div>
+                    <a href="dashboard.html" class="nav-item">
+                        <i class="fas fa-th-large"></i>
+                        <span>Dashboard</span>
+                    </a>
+                    <a href="siswa.html" class="nav-item">
+                        <i class="fas fa-users"></i>
+                        <span>Siswa</span>
+                    </a>
+                    <a href="absensi.html" class="nav-item">
+                        <i class="fas fa-clipboard-check"></i>
+                        <span>Absensi</span>
+                    </a>
+                    <a href="nilai.html" class="nav-item">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Nilai</span>
+                    </a>
+                    <a href="laporan.html" class="nav-item active">
+                        <i class="fas fa-file-alt"></i>
+                        <span>Laporan</span>
+                    </a>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Top Bar -->
+            <header class="topbar">
+                <div class="topbar-left">
+                    <button class="mobile-menu-btn" id="mobileMenuBtn">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <h1 class="topbar-title">Laporan</h1>
+                </div>
+                <div class="topbar-right">
+                    <button class="topbar-btn" title="Notifications">
+                        <i class="fas fa-bell"></i>
+                    </button>
+                    <div class="user-profile">
+                        <div class="user-avatar">G</div>
+                        <span class="user-name">Guru</span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Page Content -->
+            <div class="page-content">
+                <!-- Page Header -->
+                <div class="page-header">
+                    <h1 class="page-title">Laporan & Rekap</h1>
+                </div>
+
+                <!-- Tabs -->
+                <div class="tabs mb-3">
+                    <button class="tab active" onclick="switchTab('grades')">
+                        <i class="fas fa-chart-bar"></i> Rekap Nilai
+                    </button>
+                    <button class="tab" onclick="switchTab('attendance')">
+                        <i class="fas fa-clipboard-check"></i> Laporan Absensi
+                    </button>
+                </div>
+
+                <!-- Grades Tab -->
+                <div id="gradesTab" class="tab-content active">
+                    <!-- Export Buttons -->
+                    <div class="report-filters">
+                        <div class="export-buttons">
+                            <button class="btn btn-primary" onclick="exportGradesPDF()">
+                                <i class="fas fa-file-pdf"></i> Export PDF
+                            </button>
+                            <button class="btn btn-success" onclick="exportGradesExcel()">
+                                <i class="fas fa-file-excel"></i> Export Excel
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Grade Recap Table -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Rekap Nilai & Peringkat Siswa</h3>
+                        </div>
+                        <div class="table-container" style="box-shadow: none;">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Peringkat</th>
+                                        <th>Nama</th>
+                                        <th>NIS</th>
+                                        <th>Kelas</th>
+                                        <th>Rata-rata Tugas</th>
+                                        <th>Kuis</th>
+                                        <th>UTS</th>
+                                        <th>UAS</th>
+                                        <th>Remidi</th>
+                                        <th>Nilai Akhir</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="gradesTableBody">
+                                    <tr>
+                                        <td colspan="10" class="text-center">
+                                            <div class="loading">
+                                                <div class="spinner"></div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Attendance Tab -->
+                <div id="attendanceTab" class="tab-content">
+                    <!-- Filters -->
+                    <div class="card mb-3">
+                        <div class="report-filters">
+                            <div class="filter-group">
+                                <label>Tanggal Mulai</label>
+                                <input type="date" class="form-control" id="startDate">
+                            </div>
+                            <div class="filter-group">
+                                <label>Tanggal Selesai</label>
+                                <input type="date" class="form-control" id="endDate">
+                            </div>
+                            <button class="btn btn-primary" onclick="loadAttendanceReport()">
+                                <i class="fas fa-search"></i> Filter
+                            </button>
+                            <div class="export-buttons">
+                                <button class="btn btn-primary" onclick="exportAttendancePDF()">
+                                    <i class="fas fa-file-pdf"></i> Export PDF
+                                </button>
+                                <button class="btn btn-success" onclick="exportAttendanceExcel()">
+                                    <i class="fas fa-file-excel"></i> Export Excel
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Attendance Report Table -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Laporan Absensi</h3>
+                        </div>
+                        <div class="table-container" style="box-shadow: none;">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Pertemuan</th>
+                                        <th>Tanggal</th>
+                                        <th>Nama Siswa</th>
+                                        <th>NIS</th>
+                                        <th>Kelas</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="attendanceTableBody">
+                                    <tr>
+                                        <td colspan="6" class="text-center">
+                                            <div class="loading">
+                                                <div class="spinner"></div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script>
+        // Mobile menu toggle
+        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        const sidebar = document.getElementById('sidebar');
+        const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+        mobileMenuBtn.addEventListener('click', () => {
+            sidebar.classList.toggle('active');
+            sidebarOverlay.classList.toggle('active');
+        });
+
+        sidebarOverlay.addEventListener('click', () => {
+            sidebar.classList.remove('active');
+            sidebarOverlay.classList.remove('active');
+        });
+
+        // Set default dates
+        const today = new Date();
+        const firstDay = new Date(today.getFullYear(), 0, 1);
+        document.getElementById('startDate').valueAsDate = firstDay;
+        document.getElementById('endDate').valueAsDate = today;
+
+        // State
+        let gradesData = [];
+        let attendanceData = [];
+
+        // Switch tabs
+        function switchTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            
+            if (tab === 'grades') {
+                document.querySelectorAll('.tab')[0].classList.add('active');
+                document.getElementById('gradesTab').classList.add('active');
+                loadGradesReport();
+            } else {
+                document.querySelectorAll('.tab')[1].classList.add('active');
+                document.getElementById('attendanceTab').classList.add('active');
+                loadAttendanceReport();
+            }
+        }
+
+        // Load grades report
+        async function loadGradesReport() {
+            try {
+                const response = await fetch('/api/report/grades');
+                gradesData = await response.json();
+
+                const tbody = document.getElementById('gradesTableBody');
+
+                if (gradesData.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="10" class="text-center" style="padding: 40px;">
+                                <i class="fas fa-chart-bar" style="font-size: 32px; opacity: 0.3;"></i>
+                                <p style="margin-top: 10px; color: var(--text-secondary);">Belum ada data nilai</p>
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+
+                tbody.innerHTML = gradesData.map(student => {
+                    const rankClass = student.rank === 1 ? 'rank-1' : student.rank === 2 ? 'rank-2' : student.rank === 3 ? 'rank-3' : '';
+                    return `
+                        <tr class="${rankClass}">
+                            <td><strong>${student.rank}</strong></td>
+                            <td>${student.name}</td>
+                            <td>${student.nis}</td>
+                            <td>${student.class}</td>
+                            <td>${student.assignment_avg || '-'}</td>
+                            <td>${student.quiz || '-'}</td>
+                            <td>${student.uts || '-'}</td>
+                            <td>${student.uas || '-'}</td>
+                            <td>${student.remedial || '-'}</td>
+                            <td><strong>${student.final_grade}</strong></td>
+                        </tr>
+                    `;
+                }).join('');
+
+            } catch (error) {
+                console.error('Error loading grades report:', error);
+                showToast('Gagal memuat laporan nilai', 'error');
+            }
+        }
+
+        // Load attendance report
+        async function loadAttendanceReport() {
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+
+            try {
+                let url = '/api/report/attendance';
+                if (startDate && endDate) {
+                    url += `?startDate=${startDate}&endDate=${endDate}`;
+                }
+
+                const response = await fetch(url);
+                attendanceData = await response.json();
+
+                const tbody = document.getElementById('attendanceTableBody');
+
+                if (attendanceData.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="6" class="text-center" style="padding: 40px;">
+                                <i class="fas fa-clipboard-check" style="font-size: 32px; opacity: 0.3;"></i>
+                                <p style="margin-top: 10px; color: var(--text-secondary);">Belum ada data absensi</p>
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+
+                tbody.innerHTML = attendanceData.map(record => {
+                    let badgeClass = '';
+                    let statusText = '';
+                    switch(record.status) {
+                        case 'H': 
+                            badgeClass = 'badge-hadir'; 
+                            statusText = 'Hadir';
+                            break;
+                        case 'S': 
+                            badgeClass = 'badge-sakit'; 
+                            statusText = 'Sakit';
+                            break;
+                        case 'I': 
+                            badgeClass = 'badge-izin'; 
+                            statusText = 'Izin';
+                            break;
+                        case 'A': 
+                            badgeClass = 'badge-alpha'; 
+                            statusText = 'Alpha';
+                            break;
+                    }
+                    return `
+                        <tr>
+                            <td>${record.meeting}</td>
+                            <td>${formatDate(record.date)}</td>
+                            <td>${record.student_name}</td>
+                            <td>${record.nis}</td>
+                            <td>${record.class}</td>
+                            <td><span class="badge ${badgeClass}">${statusText}</span></td>
+                        </tr>
+                    `;
+                }).join('');
+
+            } catch (error) {
+                console.error('Error loading attendance report:', error);
+                showToast('Gagal memuat laporan absensi', 'error');
+            }
+        }
+
+        // Export Grades to PDF
+        function exportGradesPDF() {
+            if (gradesData.length === 0) {
+                showToast('Tidak ada data untuk diexport', 'warning');
+                return;
+            }
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            // Title
+            doc.setFontSize(18);
+            doc.text('Rekap Nilai & Peringkat Siswa', 14, 20);
+            doc.setFontSize(10);
+            doc.text(`Dicetak pada: ${new Date().toLocaleDateString('id-ID')}`, 14, 28);
+
+            // Table
+            const tableData = gradesData.map(s => [
+                s.rank,
+                s.name,
+                s.nis,
+                s.class,
+                s.assignment_avg || '-',
+                s.quiz || '-',
+                s.uts || '-',
+                s.uas || '-',
+                s.remedial || '-',
+                s.final_grade
+            ]);
+
+            doc.autoTable({
+                head: [['Rank', 'Nama', 'NIS', 'Kelas', 'Tugas', 'Kuis', 'UTS', 'UAS', 'Remidi', 'Nilai Akhir']],
+                body: tableData,
+                startY: 35,
+                styles: { fontSize: 8 },
+                headStyles: { fillColor: [30, 58, 95] }
+            });
+
+            doc.save('rekap-nilai.pdf');
+            showToast('PDF berhasil diunduh', 'success');
+        }
+
+        // Export Grades to Excel
+        function exportGradesExcel() {
+            if (gradesData.length === 0) {
+                showToast('Tidak ada data untuk diexport', 'warning');
+                return;
+            }
+
+            const data = gradesData.map(s => ({
+                'Peringkat': s.rank,
+                'Nama': s.name,
+                'NIS': s.nis,
+                'Kelas': s.class,
+                'Rata-rata Tugas': s.assignment_avg,
+                'Kuis': s.quiz,
+                'UTS': s.uts,
+                'UAS': s.uas,
+                'Remidi': s.remedial,
+                'Nilai Akhir': s.final_grade
+            }));
+
+            const ws = XLSX.utils.json_to_sheet(data);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Rekap Nilai');
+            XLSX.writeFile(wb, 'rekap-nilai.xlsx');
+            showToast('Excel berhasil diunduh', 'success');
+        }
+
+        // Export Attendance to PDF
+        function exportAttendancePDF() {
+            if (attendanceData.length === 0) {
+                showToast('Tidak ada data untuk diexport', 'warning');
+                return;
+            }
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            // Title
+            doc.setFontSize(18);
+            doc.text('Laporan Absensi', 14, 20);
+            doc.setFontSize(10);
+            doc.text(`Dicetak pada: ${new Date().toLocaleDateString('id-ID')}`, 14, 28);
+
+            // Table
+            const tableData = attendanceData.map(a => [
+                a.meeting,
+                formatDate(a.date),
+                a.student_name,
+                a.nis,
+                a.class,
+                a.status
+            ]);
+
+            doc.autoTable({
+                head: [['Pertemuan', 'Tanggal', 'Nama', 'NIS', 'Kelas', 'Status']],
+                body: tableData,
+                startY: 35,
+                styles: { fontSize: 8 },
+                headStyles: { fillColor: [30, 58, 95] }
+            });
+
+            doc.save('laporan-absensi.pdf');
+            showToast('PDF berhasil diunduh', 'success');
+        }
+
+        // Export Attendance to Excel
+        function exportAttendanceExcel() {
+            if (attendanceData.length === 0) {
+                showToast('Tidak ada data untuk diexport', 'warning');
+                return;
+            }
+
+            const data = attendanceData.map(a => ({
+                'Pertemuan': a.meeting,
+                'Tanggal': formatDate(a.date),
+                'Nama': a.student_name,
+                'NIS': a.nis,
+                'Kelas': a.class,
+                'Status': a.status
+            }));
+
+            const ws = XLSX.utils.json_to_sheet(data);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Laporan Absensi');
+            XLSX.writeFile(wb, 'laporan-absensi.xlsx');
+            showToast('Excel berhasil diunduh', 'success');
+        }
+
+        // Format date
+        function formatDate(dateStr) {
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('id-ID', {
+                day: '2-digit',
+                month: 'long',
+                year: 'numeric'
+            });
+        }
+
+        // Toast notification
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            
+            let icon = '';
+            switch(type) {
+                case 'success': icon = 'fa-check-circle'; break;
+                case 'error': icon = 'fa-times-circle'; break;
+                case 'warning': icon = 'fa-exclamation-circle'; break;
+                default: icon = 'fa-info-circle';
+            }
+            
+            toast.innerHTML = `<i class="fas ${icon}"></i> <span>${message}</span>`;
+            container.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.remove();
+            }, 3000);
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', loadGradesReport);
+    </script>
+</body>
+</html>
+
